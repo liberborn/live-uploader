@@ -1,0 +1,9 @@
+{
+    "drivePath"   : "C:\\",
+    "appPath"     : "C:\\var\\live-uploader",
+    "projectPath" : "var\\project\\public",
+    "host"        : "example.com",
+    "remotePath"  : "/var/www/public",
+    "username"    : "user",
+    "privateKey"  : "C:\\home\\.ssh\\id_rsa"
+}
