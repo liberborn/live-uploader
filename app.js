@@ -48,7 +48,7 @@ LiveUploader.prototype = {
 
     logStart : function () {
         console.log('----------------------------');
-        console.log('Upload monitor              ');
+        console.log('Live Uploader               ');
         console.log('----------------------------\n');
     },
 
