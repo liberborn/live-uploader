@@ -1,6 +1,6 @@
 # Live Uploader (SFTP)
 
-Simple tool for web project live upload. The tool monitors project folder and immediately uploades updated files to remote host via SFTP.
+Simple tool for web project live upload. The tool monitors project folder and immediately uploads changed files to remote host via SFTP.
 
 Before running the tool please create **config.json** with project and SFTP connection configuration.
 
