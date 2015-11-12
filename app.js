@@ -2,8 +2,10 @@ var fs = require('fs'),
     path = require('path'),
     chokidar = require('chokidar'),
     Sftp = require('sftp-upload'),
-    Client = require('scp2').Client;
-    // util = require('util');
+    Client = require('scp2').Client,
+    nn = require('node-notifier');
+
+
 
 /**
  * Live Uploader (SFTP)
@@ -18,23 +20,44 @@ var LiveUploader = function (conf) {
 LiveUploader.prototype = {
 
     conf : {},
-    configFile : null,
+    configFile  : null,
 
-    drivePath : null,
+    drivePath   : null,
     projectPath : null,
-    host : null,
-    remotePath : null,
-    user : null,
+    host        : null,
+    remotePath  : null,
+    user        : null,
 
-    watcher : null,
+    watcher     : null,
 
     init : function () {
-        var key = null;
+        this.setConf().logStart().logConfig().initWatcher().initEvents();
+    },
 
+    setConf : function () {
         this.configFile = process.argv[2] || this.configFile;
         this.conf = JSON.parse(fs.readFileSync(this.configFile, 'utf8'));
 
-        this.logStart();
+        return this;
+    },
+
+    log : function (msg, type) {
+        type = type ? ('[' + type + ']') : '[info]';
+        console.log(type + ' ' + msg);
+
+        return this;
+    },
+
+    logStart : function () {
+        console.log('----------------------------');
+        console.log('Live Uploader               ');
+        console.log('----------------------------\n');
+
+        return this;
+    },
+
+    logConfig : function () {
+        var key = null;
 
         for (key in this.conf) {
             if (this.conf.hasOwnProperty(key)) {
@@ -42,19 +65,8 @@ LiveUploader.prototype = {
             }
         }
         console.log('\n');
-        this.initWatcher();
-        this.initEvents();
-    },
 
-    logStart : function () {
-        console.log('----------------------------');
-        console.log('Live Uploader               ');
-        console.log('----------------------------\n');
-    },
-
-    log : function (msg, type) {
-        type = type ? ('[' + type + ']') : '[info]';
-        console.log(type + ' ' + msg);
+        return this;
     },
 
     initWatcher : function () {
@@ -73,6 +85,8 @@ LiveUploader.prototype = {
             ignorePermissionErrors: false,
             atomic: true
         });
+
+        return this;
     },
 
     initEvents : function () {
@@ -105,20 +119,39 @@ LiveUploader.prototype = {
 
             sftp.on('error', function (err) {
                 me.log(err, 'error');
-            })
-                // .on('uploading', function (pgs) {
-                //     me.log('upload: ' + remoteFilePath);
-                //     me.log('upload: ' + pgs.percent + '%');
-                // })
-                .on('completed', function () {
-                    endTime = new Date().getTime();
-                    me.log('uploaded in ' + (endTime - startTime) + ' ms\n');
-                })
-                .upload();
+            });
 
-        }).on('error', function (err) {
+            sftp.on('completed', function () {
+                endTime = new Date().getTime();
+                me.log('uploaded in ' + (endTime - startTime) + ' ms\n');
+
+                if (me.conf.enableUploadNotification) {
+                    nn.notify({
+                        title: 'LiveUploader',
+                        message : '\n' + filePath + '\n' + 'uploaded in ' + (endTime - startTime) + ' ms',
+                        time: 2000,
+                        wait: false
+                    });
+                }
+            });
+
+            sftp.upload();
+
+        });
+
+        this.watcher.on('error', function (err) {
             me.log(err, 'error');
         });
+
+        process.on('uncaughtException', function (exception) { // global expections catch
+            nn.notify({
+                title: 'LiveUploader Exception',
+                message : '\nError:\n' + exception,
+                wait: false
+            });
+        });
+
+        return me;
     }
 };
 
